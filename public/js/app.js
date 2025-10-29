@@ -1,10 +1,8 @@
-// Twitch Streamers Data Visualization
-// Wait for DOM to be ready
+// wait for page to load
 $(document).ready(function() {
-    // Initialize Foundation
     $(document).foundation();
     
-    // HOME PAGE CHARTS
+    // home page
     if ($('#topStreamersChart').length) {
         initTopStreamersChart();
     }
@@ -13,33 +11,31 @@ $(document).ready(function() {
         initLanguageChart();
     }
     
-    // RANKINGS PAGE CHART
+    // rankings
     if ($('#rankingsChart').length) {
         initRankingsChart();
     }
     
-    // LANGUAGES PAGE CHART
+    // languages
     if ($('#languageStatsChart').length) {
         initLanguageStatsChart();
     }
     
-    // INDIVIDUAL STREAMER PAGE CHART
+    // individual streamer
     if ($('#streamerMetricsChart').length) {
         initStreamerMetricsChart();
     }
 });
 
-// ============================================
-// CHART 1: Top Streamers Bar Chart (Home Page)
-// ============================================
+// top streamers bar chart
 function initTopStreamersChart() {
-    // Data will be embedded by server or use default example data
+    // use server data if available, otherwise default
     const data = window.topStreamersData || {
         labels: ['xQcOW', 'summit1g', 'Gaules', 'ESL_CSGO', 'Tfue', 'Riot Games', 'NICKMERCS', 'Alinity', 'Rubius', 'auronplay'],
         watchtime: [6196161750, 6091677300, 5644590915, 3970318140, 3671000070, 3608966530, 3246586185, 2973096615, 2947514615, 2897221615]
     };
     
-    // Convert minutes to hours for better readability
+    // convert to hours
     const watchtimeHours = data.watchtime.map(minutes => Math.round(minutes / 60));
     
     const ctx = document.getElementById('topStreamersChart').getContext('2d');
@@ -81,9 +77,7 @@ function initTopStreamersChart() {
     });
 }
 
-// ============================================
-// CHART 2: Language Distribution Pie Chart (Home Page)
-// ============================================
+// language pie chart
 function initLanguageChart() {
     const data = window.languageData || {
         labels: ['English', 'Korean', 'Russian', 'Spanish', 'French', 'Portuguese', 'German', 'Chinese', 'Turkish', 'Italian', 'Other'],
@@ -130,16 +124,13 @@ function initLanguageChart() {
     });
 }
 
-// ============================================
-// CHART 3: Rankings Horizontal Bar Chart (Rankings Page)
-// ============================================
+// rankings chart (horizontal)
 function initRankingsChart() {
     const data = window.rankingsData || {
         labels: ['xQcOW', 'summit1g', 'Gaules', 'ESL_CSGO', 'Tfue', 'Riot Games', 'NICKMERCS', 'Alinity', 'Rubius', 'auronplay', 'Tfue', 'Pokimane', 'shroud', 'Ninja', 'TSM_Myth'],
         watchtime: [6196161750, 6091677300, 5644590915, 3970318140, 3671000070, 3608966530, 3246586185, 2973096615, 2947514615, 2897221615, 2800000000, 2700000000, 2600000000, 2500000000, 2400000000]
     };
     
-    // Convert minutes to hours
     const watchtimeHours = data.watchtime.map(minutes => Math.round(minutes / 60));
     
     const ctx = document.getElementById('rankingsChart').getContext('2d');
@@ -156,7 +147,7 @@ function initRankingsChart() {
             }]
         },
         options: {
-            indexAxis: 'y', // Horizontal bars
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
@@ -179,9 +170,7 @@ function initRankingsChart() {
     });
 }
 
-// ============================================
-// CHART 4: Language Stats Bar Chart (Languages Page)
-// ============================================
+// language stats
 function initLanguageStatsChart() {
     const data = window.languageStatsData || {
         labels: ['English', 'Korean', 'Russian', 'Spanish', 'French', 'Portuguese', 'German', 'Chinese', 'Turkish', 'Italian'],
@@ -222,15 +211,12 @@ function initLanguageStatsChart() {
     });
 }
 
-// ============================================
-// CHART 5: Individual Streamer Radar Chart (Streamer Page)
-// ============================================
+// streamer radar chart
 function initStreamerMetricsChart() {
-    // Data should be normalized 0-100 by server
-    // These are example/placeholder values
+    // backend needs to normalize these to 0-100
     const data = window.streamerMetricsData || {
         labels: ['Watch Time', 'Stream Time', 'Followers', 'Peak Viewers', 'Avg Viewers'],
-        values: [85, 70, 90, 75, 80] // Normalized percentile scores
+        values: [85, 70, 90, 75, 80]
     };
     
     const ctx = document.getElementById('streamerMetricsChart').getContext('2d');
