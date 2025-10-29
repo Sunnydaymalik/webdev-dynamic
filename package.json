@@ -1,0 +1,16 @@
+{
+    "name": "dynamic_server",
+    "description": "Dynamic Server",
+    "version": "1.0.0",
+    "author": {
+        "name": "Prince Cole",
+        "email": "Cole4786@stthomas.edu"
+    },
+    "contributors": [
+    ],
+    "repository": {},
+    "dependencies": {
+        "express": "^5.1.0",
+        "sqlite3": "^5.1.7"
+    }
+}
