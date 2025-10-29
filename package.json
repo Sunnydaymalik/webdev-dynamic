@@ -1,14 +1,25 @@
 {
     "name": "dynamic_server",
-    "description": "Dynamic Server",
+    "description": "Dynamic Twitch Streamers Web Server",
     "version": "1.0.0",
     "author": {
-        "name": "Prince Cole",
-        "email": "Cole4786@stthomas.edu"
+        "name": "Sunnydaymalik",
+        "email": "sunnydaymalik@example.com"
     },
     "contributors": [
+        {
+            "name": "Eli",
+            "role": "Frontend Developer"
+        },
+        {
+            "name": "Jahir",
+            "role": "Backend Developer"
+        }
     ],
-    "repository": {},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Sunnydaymalik/webdev-dynamic.git"
+    },
     "dependencies": {
         "express": "^5.1.0",
         "sqlite3": "^5.1.7"

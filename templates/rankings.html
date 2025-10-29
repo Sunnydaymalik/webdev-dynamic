@@ -15,7 +15,7 @@
 				<li class="menu-text"><strong>Twitch Streamers</strong></li>
 				<li><a href="/">Home</a></li>
 				<li><a href="/rankings">Top Rankings</a></li>
-				<li><a href="/games">By Game</a></li>
+				<li><a href="/languages">By Language</a></li>
 			</ul>
 		</div>
 	</nav>
@@ -23,13 +23,21 @@
 	<!-- Main Content -->
 	<div class="grid-container">
 		<div class="grid-x grid-margin-x">
-			<div class="cell">
-				<h1>Top Streamer Rankings</h1>
-				<p class="lead">View the top 1000 Twitch streamers ranked by their performance metrics.</p>
-			</div>
+		<div class="cell">
+			<h1>Top Streamer Rankings</h1>
+			<p class="lead">View the top 1000 Twitch streamers ranked by their performance metrics.</p>
 		</div>
+	</div>
 
-		<!-- Rankings Table -->
+	<!-- Rankings Visualization -->
+	<div class="grid-x grid-margin-x" style="margin-top: 2rem;">
+		<div class="cell">
+			<h2>Rankings Visualization</h2>
+			<canvas id="rankingsChart"></canvas>
+		</div>
+	</div>
+
+	<!-- Rankings Table -->
 		<div class="grid-x grid-margin-x">
 			<div class="cell">
 				<table class="hover stack">
@@ -37,7 +45,7 @@
 						<tr>
 							<th>Rank</th>
 							<th>Streamer</th>
-							<th>Game</th>
+							<th>Language</th>
 							<th>Followers</th>
 							<th>Watch Time (Hours)</th>
 							<th>Stream Time (Hours)</th>
@@ -74,6 +82,7 @@
 	<script src="/js/vendor/jquery.js"></script>
 	<script src="/js/vendor/what-input.js"></script>
 	<script src="/js/vendor/foundation.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<script src="/js/app.js"></script>
 </body>
 </html>
