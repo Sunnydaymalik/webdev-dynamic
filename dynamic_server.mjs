@@ -61,16 +61,44 @@ featuredHTML += `
 }
 
 
-                        // Replace placeholders
-                        let html = data
-                            .replace('{{FEATURED_STREAMERS}}', featuredHTML)
-                            .replace('{{TOTAL_STREAMERS}}', totalStreamers.total)
-                            .replace('{{TOTAL_LANGUAGES}}', totalLanguages.total)
-                            .replace('{{TOTAL_WATCH_TIME}}', (totalWatch.total / 60).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+                        // Get language data for chart
+                        db.all('SELECT Language, COUNT(*) as count FROM Twitch GROUP BY Language ORDER BY count DESC', [], (err, langRows) => {
+                            if (err) langRows = [];
 
+                            // Build chart data for top streamers
+                            const chartLabels = topRows.map(r => r.Channel);
+                            const chartWatchtime = topRows.map(r => r.Watchtime);
 
-                        // Send page
-                        res.status(200).type('html').send(html);
+                            // Build chart data for languages
+                            const langLabels = langRows.map(r => r.Language);
+                            const langCounts = langRows.map(r => r.count);
+
+                            // Create chart data script
+                            const chartScript = `
+<script>
+window.topStreamersData = {
+    labels: ${JSON.stringify(chartLabels)},
+    watchtime: ${JSON.stringify(chartWatchtime)}
+};
+window.languageData = {
+    labels: ${JSON.stringify(langLabels)},
+    counts: ${JSON.stringify(langCounts)}
+};
+</script>`;
+
+                            // Replace placeholders
+                            let html = data
+                                .replace('{{FEATURED_STREAMERS}}', featuredHTML)
+                                .replace('{{TOTAL_STREAMERS}}', totalStreamers.total)
+                                .replace('{{TOTAL_LANGUAGES}}', totalLanguages.total)
+                                .replace('{{TOTAL_WATCH_TIME}}', (totalWatch.total / 60).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+
+                            // Inject chart data before </body>
+                            html = html.replace('</body>', chartScript + '</body>');
+
+                            // Send page
+                            res.status(200).type('html').send(html);
+                        });
                     });
                 });
             });
@@ -126,7 +154,19 @@ app.get('/rankings', (req, res) => {
                 fs.readFile(path.join(template, 'rankings.html'), 'utf8', (err, html) => {
                     if (err) return res.status(500).send('Template Error');
 
-                    const htmlOutput = html
+                    // Build chart data for rankings
+                    const chartLabels = rows.map(r => r.Channel);
+                    const chartWatchtime = rows.map(r => r.Watchtime);
+
+                    const chartScript = `
+<script>
+window.rankingsData = {
+    labels: ${JSON.stringify(chartLabels)},
+    watchtime: ${JSON.stringify(chartWatchtime)}
+};
+</script>`;
+
+                    let htmlOutput = html
     .replace('{{RANKINGS_TABLE_ROWS}}', rows.map((r, idx) => `
         <tr>
             <td>${offset + idx + 1}</td>
@@ -141,6 +181,9 @@ app.get('/rankings', (req, res) => {
     .replace('{{WATCHTIME_NEXT_10_PAGE_LINK}}', next10)
     .replace('{{WATCHTIME_PREVIOUS_PAGE_LINK}}', page > 1 ? `<li><a href="/rankings?page=${page-1}">Prev</a></li>` : '')
     .replace('{{WATCHTIME_NEXT_PAGE_LINK}}', page < totalPages ? `<li><a href="/rankings?page=${page+1}">Next</a></li>` : '');
+
+                    // Inject chart data
+                    htmlOutput = htmlOutput.replace('</body>', chartScript + '</body>');
 
                     res.status(200).type('html').send(htmlOutput);
                 });
@@ -211,14 +254,29 @@ app.get('/languages', (req, res) => {
                 fs.readFile(path.join(template, 'languages.html'), 'utf8', (err, html) => {
                     if (err) return res.status(500).send('Template Error');
 
-                    res.status(200).type('html').send(
-                        html
-                            .replace('{{LANGUAGES_GRID}}', languagesGridHTML)
-                            .replace('{{LANGUAGES_PAGINATION}}', paginationHTML)
-                            .replace('{{LANGUAGE_DETAIL_SECTION}}', '')
-                            .replace('{{LANGUAGE_STREAMERS_SECTION}}', '')
-                            .replace('{{LANGUAGE_STREAMERS_PAGINATION}}', '')
-                    );
+                    // Build chart data for languages
+                    const chartLabels = rows.map(r => r.Language);
+                    const chartCounts = rows.map(r => r.streamerCount);
+
+                    const chartScript = `
+<script>
+window.languageStatsData = {
+    labels: ${JSON.stringify(chartLabels)},
+    counts: ${JSON.stringify(chartCounts)}
+};
+</script>`;
+
+                    let htmlOutput = html
+                        .replace('{{LANGUAGES_GRID}}', languagesGridHTML)
+                        .replace('{{LANGUAGES_PAGINATION}}', paginationHTML)
+                        .replace('{{LANGUAGE_DETAIL_SECTION}}', '')
+                        .replace('{{LANGUAGE_STREAMERS_SECTION}}', '')
+                        .replace('{{LANGUAGE_STREAMERS_PAGINATION}}', '');
+
+                    // Inject chart data
+                    htmlOutput = htmlOutput.replace('</body>', chartScript + '</body>');
+
+                    res.status(200).type('html').send(htmlOutput);
                 });
             });
         });
@@ -264,36 +322,51 @@ app.get('/languages', (req, res) => {
             fs.readFile(path.join(template, 'languages.html'), 'utf8', (err, html) => {
                 if (err) return res.status(500).send('Template Error');
 
-                res.status(200).type('html').send(
-                    html
-                        .replace('{{LANGUAGES_GRID}}', '')
-                        .replace('{{LANGUAGES_PAGINATION}}', '')
-                        .replace('{{LANGUAGE_DETAIL_SECTION}}', `
-                            <h3>${selectedLang} Streamers</h3>
-                            <p>Total Streamers: ${totalStreamers}</p>
-                            <p>Total Watch Time: ${(summary.totalWatch / 60).toLocaleString(undefined, {maximumFractionDigits:1})} hrs</p>
-                        `)
-                        .replace('{{LANGUAGE_STREAMERS_SECTION}}', `
-                            <table class="hover stack">
-                                <thead>
-                                    <tr>
-                                        <th>Rank</th>
-                                        <th>Streamer</th>
-                                        <th>Followers</th>
-                                        <th>Watch Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${streamersHTML}
-                                </tbody>
-                            </table>
-                        `)
-                        .replace('{{LANGUAGE_STREAMERS_PAGINATION}}', `
+                // Build chart data for specific language
+                const chartLabels = streamers.map(r => r.Channel);
+                const chartWatchtime = streamers.map(r => r.Watchtime);
+
+                const chartScript = `
+<script>
+window.languageStatsData = {
+    labels: ${JSON.stringify(chartLabels)},
+    counts: ${JSON.stringify(chartWatchtime)}
+};
+</script>`;
+
+                let htmlOutput = html
+                    .replace('{{LANGUAGES_GRID}}', '')
+                    .replace('{{LANGUAGES_PAGINATION}}', '')
+                    .replace('{{LANGUAGE_DETAIL_SECTION}}', `
+                        <h3>${selectedLang} Streamers</h3>
+                        <p>Total Streamers: ${totalStreamers}</p>
+                        <p>Total Watch Time: ${(summary.totalWatch / 60).toLocaleString(undefined, {maximumFractionDigits:1})} hrs</p>
+                    `)
+                    .replace('{{LANGUAGE_STREAMERS_SECTION}}', `
+                        <table class="hover stack">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Streamer</th>
+                                    <th>Followers</th>
+                                    <th>Watch Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${streamersHTML}
+                            </tbody>
+                        </table>
+                    `)
+                    .replace('{{LANGUAGE_STREAMERS_PAGINATION}}', `
 <nav class="pagination-wrapper" role="navigation" aria-label="Pagination">
     ${streamersPagination}
 </nav>
-`)
-                );
+`);
+
+                // Inject chart data
+                htmlOutput = htmlOutput.replace('</body>', chartScript + '</body>');
+
+                res.status(200).type('html').send(htmlOutput);
             });
         });
     });
@@ -327,23 +400,54 @@ app.get('/streamer', (req, res) => {
         db.get('SELECT * FROM Twitch WHERE Channel = ?', [channel], (err, row) => {
             if (err) return res.status(500).send('SQL Error');
 
-            fs.readFile(path.join(template, 'streamer.html'), 'utf8', (err, html) => {
-                if (err) return res.status(500).send('Template Error');
+            // Get max values for normalization
+            db.get(`SELECT 
+                MAX(Watchtime) as maxWatch,
+                MAX(Streamtime) as maxStream,
+                MAX(Followers) as maxFollowers,
+                MAX(Peakviewers) as maxPeak,
+                MAX(Averageviewers) as maxAvg
+                FROM Twitch`, [], (err, maxVals) => {
+                if (err) maxVals = {maxWatch: 1, maxStream: 1, maxFollowers: 1, maxPeak: 1, maxAvg: 1};
 
-                const htmlOutput = html
-                    .replace(/{{STREAMER_NAME}}/g, row.Channel)
-                    .replace(/{{STREAMER_THUMBNAIL}}/g, row.ProfileImage || '/img/placeholder.jpg')
-                    .replace(/{{CHANNEL_NAME}}/g, row.Channel)
-                    .replace(/{{LANGUAGE}}/g, row.Language)
-                    .replace(/{{FOLLOWERS}}/g, row.Followers.toLocaleString())
-                    .replace(/{{WATCH_TIME}}/g, (row.Watchtime / 60).toLocaleString(undefined, {maximumFractionDigits:1}))
-                    .replace(/{{STREAM_TIME}}/g, row.Streamtime ? (row.Streamtime / 60).toLocaleString(undefined, {maximumFractionDigits:1}) : 'N/A')
-                    .replace(/{{PEAK_VIEWERS}}/g, row.Peakviewers || 'N/A')
-                    .replace(/{{STREAM_PREVIEW}}/g, row.PreviewImage || '/img/placeholder.jpg')
-                    .replace('{{PREVIOUS_STREAMER_LINK}}', prevLink)
-                    .replace('{{NEXT_STREAMER_LINK}}', nextLink);
+                // Normalize to 0-100
+                const normalizedValues = [
+                    Math.round((row.Watchtime / maxVals.maxWatch) * 100),
+                    Math.round((row.Streamtime / maxVals.maxStream) * 100),
+                    Math.round((row.Followers / maxVals.maxFollowers) * 100),
+                    Math.round((row.Peakviewers / maxVals.maxPeak) * 100),
+                    Math.round((row.Averageviewers / maxVals.maxAvg) * 100)
+                ];
 
-                res.status(200).type('html').send(htmlOutput);
+                const chartScript = `
+<script>
+window.streamerMetricsData = {
+    labels: ['Watch Time', 'Stream Time', 'Followers', 'Peak Viewers', 'Avg Viewers'],
+    values: ${JSON.stringify(normalizedValues)}
+};
+</script>`;
+
+                fs.readFile(path.join(template, 'streamer.html'), 'utf8', (err, html) => {
+                    if (err) return res.status(500).send('Template Error');
+
+                    let htmlOutput = html
+                        .replace(/{{STREAMER_NAME}}/g, row.Channel)
+                        .replace(/{{STREAMER_THUMBNAIL}}/g, row.ProfileImage || '/img/placeholder.jpg')
+                        .replace(/{{CHANNEL_NAME}}/g, row.Channel)
+                        .replace(/{{LANGUAGE}}/g, row.Language)
+                        .replace(/{{FOLLOWERS}}/g, row.Followers.toLocaleString())
+                        .replace(/{{WATCH_TIME}}/g, (row.Watchtime / 60).toLocaleString(undefined, {maximumFractionDigits:1}))
+                        .replace(/{{STREAM_TIME}}/g, row.Streamtime ? (row.Streamtime / 60).toLocaleString(undefined, {maximumFractionDigits:1}) : 'N/A')
+                        .replace(/{{PEAK_VIEWERS}}/g, row.Peakviewers || 'N/A')
+                        .replace(/{{STREAM_PREVIEW}}/g, row.PreviewImage || '/img/placeholder.jpg')
+                        .replace('{{PREVIOUS_STREAMER_LINK}}', prevLink)
+                        .replace('{{NEXT_STREAMER_LINK}}', nextLink);
+
+                    // Inject chart data
+                    htmlOutput = htmlOutput.replace('</body>', chartScript + '</body>');
+
+                    res.status(200).type('html').send(htmlOutput);
+                });
             });
         });
     });
