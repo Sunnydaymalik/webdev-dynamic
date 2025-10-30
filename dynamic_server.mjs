@@ -16,7 +16,7 @@ const template = path.join(__dirname, './templates');
 let app = express();
 app.use(express.static(root));
 
-const db = new sqlite3.Database('./twitch.sqlite3', sqlite3.OPEN_READONLY, (err) => {
+const db = new sqlite3.Database('./Twitch.sqlite3', sqlite3.OPEN_READONLY, (err) => {
     if (err) console.log('Error connecting to Twitch database');
     else console.log('Connected to Twitch database');
 });
