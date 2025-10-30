@@ -171,7 +171,7 @@ app.get('/languages', (req, res) => {
                 const totalLanguages = totalResult.total;
                 const totalPages = Math.ceil(totalLanguages / perPage);
 
-                // Pagination
+                // Pagination buttons
                 const maxButtons = 10;
                 let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
                 let endPage = startPage + maxButtons - 1;
@@ -180,7 +180,6 @@ app.get('/languages', (req, res) => {
                     startPage = Math.max(1, endPage - maxButtons + 1);
                 }
 
-                // Page buttons
                 let paginationHTML = '<ul class="pagination">';
                 for (let i = startPage; i <= endPage; i++) {
                     if (i === page) {
@@ -203,20 +202,19 @@ app.get('/languages', (req, res) => {
                     </div>
                 `).join('');
 
-                fs.readFile(path.join(template, 'languages.html'), 'utf8', (err, html) => {
-                    if (err) return res.status(500).send('Template Error');
-
-                    // Build chart data for languages
-                    const chartLabels = rows.map(r => r.Language);
-                    const chartCounts = rows.map(r => r.streamerCount);
-
-                    const chartScript = `
+                // Build chart data
+                const chartLabels = rows.map(r => r.Language);
+                const chartCounts = rows.map(r => r.streamerCount);
+                const chartScript = `
 <script>
 window.languageStatsData = {
     labels: ${JSON.stringify(chartLabels)},
     counts: ${JSON.stringify(chartCounts)}
 };
 </script>`;
+
+                fs.readFile(path.join(template, 'languages.html'), 'utf8', (err, html) => {
+                    if (err) return res.status(500).send('Template Error');
 
                     let htmlOutput = html
                         .replace('{{LANGUAGES_GRID}}', languagesGridHTML)
@@ -302,17 +300,14 @@ window.languageStatsData = {
 <nav class="pagination-wrapper" role="navigation" aria-label="Pagination">
     ${streamersPagination}
 </nav>
-`);
-
-                // Inject chart data
-                htmlOutput = htmlOutput.replace('</body>', chartScript + '</body>');
-
-                res.status(200).type('html').send(htmlOutput);
+`)
+                );
             });
         });
     });
 });
 // End of languages
+
 
 
 //Start of streamer
@@ -340,8 +335,8 @@ app.get('/streamer', (req, res) => {
         db.get('SELECT * FROM Twitch WHERE Channel = ?', [channel], (err, row) => {
             if (err) return res.status(500).send('SQL Error');
 
-                fs.readFile(path.join(template, 'streamer.html'), 'utf8', (err, html) => {
-                    if (err) return res.status(500).send('Template Error');
+            fs.readFile(path.join(template, 'streamer.html'), 'utf8', (err, html) => {
+                if (err) return res.status(500).send('Template Error');
 
                 const htmlOutput = html
                     .replace(/{{STREAMER_NAME}}/g, row.Channel)
@@ -356,15 +351,14 @@ app.get('/streamer', (req, res) => {
                     .replace('{{PREVIOUS_STREAMER_LINK}}', prevLink)
                     .replace('{{NEXT_STREAMER_LINK}}', nextLink);
 
-                    // Inject chart data
-                    htmlOutput = htmlOutput.replace('</body>', chartScript + '</body>');
-
-                    res.status(200).type('html').send(htmlOutput);
-                });
+                // Send page (no chartScript here)
+                res.status(200).type('html').send(htmlOutput);
             });
         });
     });
 });
+//End of streamer
+
 //End of streamer
 
 //Start of followers
